@@ -1,5 +1,5 @@
-import apache_beam
+import apache_beam as beam
+from apache_beam.options.pipeline_options import PipelinesOptions
 
-print('Apache beam importado!')
-
-print(dir(apache_beam))
+pipeline_options = PipelinesOptions(argv=None) # Opcoes de pipeline
+pipeline = beam.Pipeline(options=pipeline_options)

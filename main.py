@@ -30,6 +30,22 @@ def texto_para_lista(elemento, delimitador='|'): # Delimitador padrao é o pipe
     """
     return elemento.split(delimitador) # Transformando a string em lista, pelo delimitador
 
+def trata_datas(elemento):
+    """
+    Recebe um dicionário e cria um novo campo com ANO-MÊS
+    Retorna o mesmo dicionario com o novo campo
+    """
+    elemento['ano_mes'] = '-'.join(elemento['data_iniSE'].split('-')[:2]) # O join junta atraves do parametro, no caso '-'
+    return elemento
+    
+def chave_uf(elemento):
+    """
+    Receber um dicionário
+    Retornar uma tupla com o Estado(UF) e o elemento (UF, dicionario)
+    """
+    chave = elemento['uf']
+    return (chave, elemento)
+
 # Variavel que recebe processos se chama pcollection
 dengue = (
     pipeline
@@ -37,6 +53,9 @@ dengue = (
         ReadFromText('casos_dengue.txt', skip_header_lines=1)
     | "De texto para lista" >> beam.Map(texto_para_lista) # Passo o metodo que retorna o elemento
     | "De lista para dicionário" >> beam.Map(lista_para_dicionario, colunas_dengue)
+    | "Criar campo ano_mes" >> beam.Map(trata_datas)
+    | "Criar chave pelo estado" >> beam.Map(chave_uf)
+    | "Agrupar pelo estado" >> beam.GroupByKey()
     | "Mostrar resultados" >> beam.Map(print)
 ) # Nome do processo e metodo, skippando uma linha do header, retorna lista e aplica um print
 

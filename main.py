@@ -82,6 +82,20 @@ def arredonda(elemento):
     chave, mm = elemento
     return (chave, round(mm, 1))
 
+def filtra_campos_vazios(elemento):
+    """
+    Remove elementos que tenham chaves vazias
+    Recebe uma tupla ('CE-2015-10', {'chuvas': [0.0], 'dengue': []})
+    Retorna uma tupla sem campos vazios
+    """
+    chave, dados = elemento # A tupla vai para variavel dados
+    if all([
+        dados['chuvas'],
+        dados['dengue']
+        ]):
+        return True
+    return False
+
 # Variavel que recebe processos se chama pcollection
 # Cada processo é uma pipeline
 
@@ -118,6 +132,7 @@ resultado = (
     # | "Agrupa as pcols" >> beam.GroupByKey()
     ({'chuvas':chuvas, 'dengue': dengue})
     | 'Mesclar pcols' >> beam.CoGroupByKey() # Faz o agrupamento pela chave
+    | 'Filtrar dados vazios' >> beam.Filter(filtra_campos_vazios) # O Filter espera um retorno de True or False para saber quem deixa na npcollections
     | "Mostrar resultados da uniao" >> beam.Map(print) 
 )
 

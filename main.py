@@ -86,30 +86,37 @@ def arredonda(elemento):
 # Cada processo é uma pipeline
 
 # Var dengue mostra a quantidade de casos
-# dengue = (
-#     pipeline
-#     | "Leitura do dataset de dengue" >> 
-#         ReadFromText('casos_dengue.txt', skip_header_lines=1)
-#     | "De texto para lista" >> beam.Map(texto_para_lista) # Passo o metodo que retorna o elemento
-#     | "De lista para dicionário" >> beam.Map(lista_para_dicionario, colunas_dengue)
-#     | "Criar campo ano_mes" >> beam.Map(trata_datas)
-#     | "Criar chave pelo estado" >> beam.Map(chave_uf)
-#     | "Agrupar pelo estado" >> beam.GroupByKey()
-#     | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue) # Para Yield usa-se o FlatMap
-#     | "Soma dos casos pela chave" >> beam.CombinePerKey(sum) # Pegam o segundo elemento e somam de acordo com as chaves iguais
-#     # | "Mostrar resultados" >> beam.Map(print)
-# ) # Nome do processo e metodo, skippando uma linha do header, retorna lista e aplica um print
-
+dengue = (
+    pipeline
+    | "Leitura do dataset de dengue" >> 
+        ReadFromText('sample_casos_dengue.txt', skip_header_lines=1)
+    | "De texto para lista" >> beam.Map(texto_para_lista) # Passo o metodo que retorna o elemento
+    | "De lista para dicionário" >> beam.Map(lista_para_dicionario, colunas_dengue)
+    | "Criar campo ano_mes" >> beam.Map(trata_datas)
+    | "Criar chave pelo estado" >> beam.Map(chave_uf)
+    | "Agrupar pelo estado" >> beam.GroupByKey()
+    | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue) # Para Yield usa-se o FlatMap
+    | "Soma dos casos pela chave" >> beam.CombinePerKey(sum) # Pegam o segundo elemento e somam de acordo com as chaves iguais
+    # | "Mostrar resultados" >> beam.Map(print)
+) # Nome do processo e metodo, skippando uma linha do header, retorna lista e aplica um print
 
 chuvas = (
     pipeline
     | "Leitura do dataset de chuvas" >> 
-        ReadFromText('chuvas.csv', skip_header_lines=1) # ReadFromText ajuda no processamento em ambientes clusterizados, melhora desempenho
+        ReadFromText('sample_chuvas.csv', skip_header_lines=1) # ReadFromText ajuda no processamento em ambientes clusterizados, melhora desempenho
     | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista, delimitador=',') # Nao posso ter duas pipelines com o mesmo nome, tem parecida na var dengue
     | "Criando a chave UF-ANO-MES" >> beam.Map(chave_uf_ano_mes_de_lista) # Pipeline de criacao de chave e valor
     | "Soma do total de chuvas pela chave" >> beam.CombinePerKey(sum) # Como no pcollection anterior, pega a mesma chave e agrupa os valores com o parâmetro (sum)
     | "Arredondar resultados de chuvas" >> beam.Map(arredonda) # Arredonda a soma para uma casa decimal
-    | "Mostrar resultados de chuvas" >> beam.Map(print)
+    # | "Mostrar resultados de chuvas" >> beam.Map(print)
+)
+
+# pcollection que junta as duas anteriores
+resultado = (
+    (chuvas, dengue) # Passo como parametro as duas pcollections anteriores
+    | "Empilha as pcols" >> beam.Flatten() # Une as pcollections do parametro (empilha)
+    | "Agrupa as pcols" >> beam.GroupByKey()
+    | "Mostrar resultados da uniao" >> beam.Map(print) 
 )
 
 pipeline.run()

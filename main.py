@@ -68,7 +68,11 @@ def chave_uf_ano_mes_de_lista(elemento):
     data, mm, uf = elemento # Cada variavel, é um pedaço da lista
     ano_mes = '-'.join(data.split('-')[:2]) # Splitei a minha data e peguei os dois primeiros elementos e juntei novamente com ano e mes
     chave = f'{uf}-{ano_mes}'
-    return chave, float(mm) # Retorna a chave formatada e a chuva em mm e como float
+    if float(mm) < 0:
+        mm = 0.0 # Trata erro do dataset que constam valores negativos, transformando em 0.0
+    else:
+        mm = float(mm) # Transforma os mm em float para realizar operacoes
+    return chave, mm # Retorna a chave formatada e a chuva em mm
 
 # Variavel que recebe processos se chama pcollection
 # Cada processo é uma pipeline
@@ -93,8 +97,9 @@ chuvas = (
     pipeline
     | "Leitura do dataset de chuvas" >> 
         ReadFromText('chuvas.csv', skip_header_lines=1) # ReadFromText ajuda no processamento em ambientes clusterizados, melhora desempenho
-    | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista, delimitador=',') # Nao posso ter duas pipelines com o mesmo nome
-    | "Criando a chave UF-ANO-MES" >> beam.Map(chave_uf_ano_mes_de_lista)
+    | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista, delimitador=',') # Nao posso ter duas pipelines com o mesmo nome, tem parecida na var dengue
+    | "Criando a chave UF-ANO-MES" >> beam.Map(chave_uf_ano_mes_de_lista) # Pipeline de criacao de chave e valor
+    | "Soma do total de chuvas pela chave" >> beam.CombinePerKey(sum) # Como no pcollection anterior, pega a mesma chave e agrupa os valores com o parâmetro (sum)
     | "Mostrar resultados de chuvas" >> beam.Map(print)
 )
 

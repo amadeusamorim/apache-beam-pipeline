@@ -46,6 +46,15 @@ def chave_uf(elemento):
     chave = elemento['uf']
     return (chave, elemento)
 
+def casos_dengue(elemento):
+    """
+    Recebe uma tupla ('RS', [{}, {}])
+    Retorna uma tupla ('RS-2014-12', 8.0)
+    """
+    uf, registros = elemento
+    for registro in registros:
+        yield (f"{uf}-{registro['ano_mes']}", registro['casos']) # Vai retornar todos os valores do for
+
 # Variavel que recebe processos se chama pcollection
 dengue = (
     pipeline
@@ -56,6 +65,7 @@ dengue = (
     | "Criar campo ano_mes" >> beam.Map(trata_datas)
     | "Criar chave pelo estado" >> beam.Map(chave_uf)
     | "Agrupar pelo estado" >> beam.GroupByKey()
+    | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue) # Para Yield usa-se o FlatMap
     | "Mostrar resultados" >> beam.Map(print)
 ) # Nome do processo e metodo, skippando uma linha do header, retorna lista e aplica um print
 

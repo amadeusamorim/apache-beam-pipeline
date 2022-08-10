@@ -96,6 +96,17 @@ def filtra_campos_vazios(elemento):
         return True
     return False
 
+def descompactar_elementos(elemento):
+    """
+    Receber uma tupla ('CE-2015-08', {'chuvas': [0.0], 'dengue': [169.0]})
+    Retornar uma tupla ('CE',2015,08, 0.0,-169.0)
+    """
+    chave, dados = elemento
+    chuva = dados['chuvas'][0] # Pegando o unico elemento da lista para nao retornar lista na func
+    dengue = dados['dengue'][0]
+    uf, ano, mes = chave.split('-')
+    return uf, int(ano), int(mes), chuva, dengue
+
 # Variavel que recebe processos se chama pcollection
 # Cada processo é uma pipeline
 
@@ -133,6 +144,7 @@ resultado = (
     ({'chuvas':chuvas, 'dengue': dengue})
     | 'Mesclar pcols' >> beam.CoGroupByKey() # Faz o agrupamento pela chave
     | 'Filtrar dados vazios' >> beam.Filter(filtra_campos_vazios) # O Filter espera um retorno de True or False para saber quem deixa na npcollections
+    | 'Descompactar elementos' >> beam.Map(descompactar_elementos)
     | "Mostrar resultados da uniao" >> beam.Map(print) 
 )
 

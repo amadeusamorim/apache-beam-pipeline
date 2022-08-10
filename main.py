@@ -1,4 +1,5 @@
 import apache_beam as beam
+import re
 from apache_beam.io import ReadFromText
 from apache_beam.options.pipeline_options import PipelineOptions
 
@@ -53,7 +54,10 @@ def casos_dengue(elemento):
     """
     uf, registros = elemento
     for registro in registros:
-        yield (f"{uf}-{registro['ano_mes']}", registro['casos']) # Vai retornar todos os valores do for
+        if bool(re.search(r'\d', registro['casos'])): # Se retornar verdadeira, faço o Yeld. Se retornar False, é porque o dado 'casos' estava vazio
+            yield (f"{uf}-{registro['ano_mes']}", float(registro['casos'])) # Vai retornar todos os valores do for, transformo em float para que possa ser somado
+        else:
+            yield (f"{uf}-{registro['ano_mes']}", 0.0) # Se tiver vazio, retorna zero
 
 # Variavel que recebe processos se chama pcollection
 dengue = (
@@ -66,6 +70,7 @@ dengue = (
     | "Criar chave pelo estado" >> beam.Map(chave_uf)
     | "Agrupar pelo estado" >> beam.GroupByKey()
     | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue) # Para Yield usa-se o FlatMap
+    | "Soma dos casos pela chave" >> beam.CombinePerKey(sum) # Pegam o segundo elemento e somam de acordo com as chaves iguais
     | "Mostrar resultados" >> beam.Map(print)
 ) # Nome do processo e metodo, skippando uma linha do header, retorna lista e aplica um print
 

@@ -59,6 +59,17 @@ def casos_dengue(elemento):
         else:
             yield (f"{uf}-{registro['ano_mes']}", 0.0) # Se tiver vazio, retorna zero
 
+def chave_uf_ano_mes_de_lista(elemento):
+    """
+    Receber uma lista de elementos
+    Retornar uma tupla contendo uma chave e valor de chuva em mm
+    ('UF-ANO-MES', 1.3)
+    """
+    data, mm, uf = elemento # Cada variavel, é um pedaço da lista
+    ano_mes = '-'.join(data.split('-')[:2]) # Splitei a minha data e peguei os dois primeiros elementos e juntei novamente com ano e mes
+    chave = f'{uf}-{ano_mes}'
+    return chave, float(mm) # Retorna a chave formatada e a chuva em mm e como float
+
 # Variavel que recebe processos se chama pcollection
 # Cada processo é uma pipeline
 
@@ -83,6 +94,7 @@ chuvas = (
     | "Leitura do dataset de chuvas" >> 
         ReadFromText('chuvas.csv', skip_header_lines=1) # ReadFromText ajuda no processamento em ambientes clusterizados, melhora desempenho
     | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista, delimitador=',') # Nao posso ter duas pipelines com o mesmo nome
+    | "Criando a chave UF-ANO-MES" >> beam.Map(chave_uf_ano_mes_de_lista)
     | "Mostrar resultados de chuvas" >> beam.Map(print)
 )
 

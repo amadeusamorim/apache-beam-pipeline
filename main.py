@@ -105,7 +105,14 @@ def descompactar_elementos(elemento):
     chuva = dados['chuvas'][0] # Pegando o unico elemento da lista para nao retornar lista na func
     dengue = dados['dengue'][0]
     uf, ano, mes = chave.split('-')
-    return uf, int(ano), int(mes), chuva, dengue
+    return uf, ano, mes, str(chuva), str(dengue)
+
+def preparar_csv(elemento, delimitador=';'):
+    """
+    Receber uma tupla ('CE', 2015, 12, 7.6, 29.0)
+    Retornar uma string delimitada "CE;2015;12;7.6;29.0"
+    """
+    return f"{delimitador}".join(elemento) # Junta a tupla de strings pelo delimitador repassado antes do .
 
 # Variavel que recebe processos se chama pcollection
 # Cada processo é uma pipeline
@@ -145,6 +152,7 @@ resultado = (
     | 'Mesclar pcols' >> beam.CoGroupByKey() # Faz o agrupamento pela chave
     | 'Filtrar dados vazios' >> beam.Filter(filtra_campos_vazios) # O Filter espera um retorno de True or False para saber quem deixa na npcollections
     | 'Descompactar elementos' >> beam.Map(descompactar_elementos)
+    | 'Preparar .csv' >> beam.Map(preparar_csv)
     | "Mostrar resultados da uniao" >> beam.Map(print) 
 )
 

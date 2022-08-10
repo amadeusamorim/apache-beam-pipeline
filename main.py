@@ -74,6 +74,14 @@ def chave_uf_ano_mes_de_lista(elemento):
         mm = float(mm) # Transforma os mm em float para realizar operacoes
     return chave, mm # Retorna a chave formatada e a chuva em mm
 
+def arredonda(elemento):
+    """
+    Recebe uma tupla ('MT-2019-12', 6674.399999999898)
+    Retorna uma tupla com o valor arredondado ('MT-2019-12', 6674.4)
+    """
+    chave, mm = elemento
+    return (chave, round(mm, 1))
+
 # Variavel que recebe processos se chama pcollection
 # Cada processo é uma pipeline
 
@@ -100,6 +108,7 @@ chuvas = (
     | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista, delimitador=',') # Nao posso ter duas pipelines com o mesmo nome, tem parecida na var dengue
     | "Criando a chave UF-ANO-MES" >> beam.Map(chave_uf_ano_mes_de_lista) # Pipeline de criacao de chave e valor
     | "Soma do total de chuvas pela chave" >> beam.CombinePerKey(sum) # Como no pcollection anterior, pega a mesma chave e agrupa os valores com o parâmetro (sum)
+    | "Arredondar resultados de chuvas" >> beam.Map(arredonda) # Arredonda a soma para uma casa decimal
     | "Mostrar resultados de chuvas" >> beam.Map(print)
 )
 

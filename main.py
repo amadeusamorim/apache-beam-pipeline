@@ -113,9 +113,11 @@ chuvas = (
 
 # pcollection que junta as duas anteriores
 resultado = (
-    (chuvas, dengue) # Passo como parametro as duas pcollections anteriores
-    | "Empilha as pcols" >> beam.Flatten() # Une as pcollections do parametro (empilha)
-    | "Agrupa as pcols" >> beam.GroupByKey()
+    # (chuvas, dengue) # Passo como parametro as duas pcollections anteriores
+    # | "Empilha as pcols" >> beam.Flatten() # Une as pcollections do parametro (empilha)
+    # | "Agrupa as pcols" >> beam.GroupByKey()
+    ({'chuvas':chuvas, 'dengue': dengue})
+    | 'Mesclar pcols' >> beam.CoGroupByKey() # Faz o agrupamento pela chave
     | "Mostrar resultados da uniao" >> beam.Map(print) 
 )
 

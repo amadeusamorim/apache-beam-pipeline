@@ -1,6 +1,7 @@
 import apache_beam as beam
 import re
 from apache_beam.io import ReadFromText
+from apache_beam.io.textio import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 
 pipeline_options = PipelineOptions(argv=None) # Opcoes de pipeline
@@ -121,7 +122,7 @@ def preparar_csv(elemento, delimitador=';'):
 dengue = (
     pipeline
     | "Leitura do dataset de dengue" >> 
-        ReadFromText('sample_casos_dengue.txt', skip_header_lines=1)
+        ReadFromText('casos_dengue.txt', skip_header_lines=1)
     | "De texto para lista" >> beam.Map(texto_para_lista) # Passo o metodo que retorna o elemento
     | "De lista para dicionário" >> beam.Map(lista_para_dicionario, colunas_dengue)
     | "Criar campo ano_mes" >> beam.Map(trata_datas)
@@ -135,7 +136,7 @@ dengue = (
 chuvas = (
     pipeline
     | "Leitura do dataset de chuvas" >> 
-        ReadFromText('sample_chuvas.csv', skip_header_lines=1) # ReadFromText ajuda no processamento em ambientes clusterizados, melhora desempenho
+        ReadFromText('chuvas.csv', skip_header_lines=1) # ReadFromText ajuda no processamento em ambientes clusterizados, melhora desempenho
     | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista, delimitador=',') # Nao posso ter duas pipelines com o mesmo nome, tem parecida na var dengue
     | "Criando a chave UF-ANO-MES" >> beam.Map(chave_uf_ano_mes_de_lista) # Pipeline de criacao de chave e valor
     | "Soma do total de chuvas pela chave" >> beam.CombinePerKey(sum) # Como no pcollection anterior, pega a mesma chave e agrupa os valores com o parâmetro (sum)
@@ -153,7 +154,11 @@ resultado = (
     | 'Filtrar dados vazios' >> beam.Filter(filtra_campos_vazios) # O Filter espera um retorno de True or False para saber quem deixa na npcollections
     | 'Descompactar elementos' >> beam.Map(descompactar_elementos)
     | 'Preparar .csv' >> beam.Map(preparar_csv)
-    | "Mostrar resultados da uniao" >> beam.Map(print) 
+    # | "Mostrar resultados da uniao" >> beam.Map(print) 
 )
+
+header = 'UF;ANO;MES;CHUVA;DENGUE'
+
+resultado | 'Criar arquivo CSV' >> WriteToText('resultado', file_name_suffix='.csv', header=header)
 
 pipeline.run()
